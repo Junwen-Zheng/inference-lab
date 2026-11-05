@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.cache/
+.env
+.DS_Store
+.coverage
+build/
+dist/
+results/*
+!results/README.md
+!results/.gitkeep
