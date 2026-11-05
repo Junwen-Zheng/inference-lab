@@ -3,8 +3,8 @@
 A project to deploy an open language model with vLLM on Kubernetes and study
 how serving configuration affects latency, throughput, and answer quality.
 
-**Status:** project scaffold. Serving, benchmarking, and optimisation are planned;
-no deployment or performance results are claimed yet.
+**Status:** metric calculations and unit tests implemented. Serving, benchmarking,
+and optimisation are planned; no deployment or performance results are claimed yet.
 
 ## Engineering question
 
@@ -36,7 +36,7 @@ performance or quality conclusion will require recorded evidence.
 
 ## Local development
 
-Use Python 3.10+ and Make on macOS or Linux. The current scaffold needs no GPU,
+Use Python 3.10+ and Make on macOS or Linux. The current code needs no GPU,
 Kubernetes cluster, model download, or third-party Python runtime dependencies.
 
 ```bash
@@ -49,23 +49,49 @@ If your Python executable has a different name:
 make check PYTHON=python3.12
 ```
 
-This checks Python syntax and imports the package. No inference runs yet.
+This checks Python syntax, imports the package, and runs the metric tests.
+Run only the tests with `make test`. No inference runs yet.
+
+## Metric definitions
+
+The metric module accepts per-request observations and the full measured run
+length. It reports:
+
+| Metric | Definition |
+| --- | --- |
+| Successful requests/s | Successful responses divided by run duration. |
+| Output tokens/s | Completion tokens from successful responses divided by run duration. |
+| Error rate | Failed requests divided by attempted requests. |
+| TTFT / E2E / TPOT | Mean and interpolated p50, p95, p99 of successful observations, in milliseconds. |
+| SLO goodput | Successful responses meeting both latency limits, divided by run duration. |
+
+Latency inputs are seconds. SLO limits and reported latency statistics are
+milliseconds. Missing latency statistics are `None`, not invented zeroes. If any
+successful response lacks a token count, token throughput is `None`. Streaming
+chunk gaps are transport observations, not true inter-token latency.
+
+A hand-checkable example: two successful requests produce 10 and 20 tokens in a
+two-second run, and a third request fails. The run has 1 successful request/s,
+15 output tokens/s, and error rate 1/3. If only one response meets both latency
+limits, goodput is 0.5 requests/s. The unit tests verify this example.
 
 ## Repository layout
 
 ```text
 .
+├── .gitignore
 ├── README.md
 ├── LICENSE
 ├── Makefile
 ├── pyproject.toml
-└── src/
-    └── inference_lab/
-        └── __init__.py
+├── src/inference_lab/
+│   ├── __init__.py
+│   └── metrics.py
+└── tests/
+    └── test_metrics.py
 ```
 
-The next implementation step is to define latency, throughput, error-rate, and
-SLO-goodput calculations with small, hand-checkable examples.
+The next implementation step is a measured streaming completions client.
 
 ## License
 
