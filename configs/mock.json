@@ -1,0 +1,12 @@
+{
+  "backend": "mock",
+  "label": "synthetic-local",
+  "base_url": "http://127.0.0.1:8000",
+  "model": "inference-model",
+  "num_requests": 24,
+  "concurrency": 4,
+  "max_tokens": 32,
+  "warmup_requests": 2,
+  "seed": 42,
+  "workload": "data/prompts.jsonl"
+}

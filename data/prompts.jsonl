@@ -1,0 +1,6 @@
+{"id":"systems-01","prompt":"Explain how a queue helps an inference server handle bursts of traffic. Give three concise points."}
+{"id":"systems-02","prompt":"Describe the difference between prefill and decoding in an autoregressive language model."}
+{"id":"systems-03","prompt":"Explain the tradeoff between request latency and throughput when batching inference requests."}
+{"id":"systems-04","prompt":"List practical signals to investigate when a GPU serving pod runs out of memory."}
+{"id":"systems-05","prompt":"Explain why quantized model weights may reduce GPU memory without improving every workload's latency."}
+{"id":"systems-06","prompt":"Describe how a readiness probe differs from a startup probe for a model serving container."}

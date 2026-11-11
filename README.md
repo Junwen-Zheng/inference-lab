@@ -3,10 +3,10 @@
 A project to deploy an open language model with vLLM on Kubernetes and study
 how serving configuration affects latency, throughput, and answer quality.
 
-**Status:** metric calculations, a measured streaming client, and a local CPU
-streaming simulator are implemented. Unit tests and an HTTP smoke check run
-without a GPU. Real model serving, load benchmarking, and optimisation are
-planned; no GPU performance results are claimed yet.
+**Status:** metric calculations, a streaming client, a CPU simulator, and a
+fixed-concurrency benchmark runner are implemented. Local protocol and runner
+checks use no model or GPU. Real model deployment and optimisation experiments
+remain planned; no GPU performance results are claimed yet.
 
 ## Engineering question
 
@@ -138,13 +138,65 @@ This smoke check verifies HTTP framing, stream parsing, measurement plumbing,
 and cleanup. Its timings are not evidence of model or GPU performance.
 Generated `results/` remain ignored by Git.
 
-## Delivery validation
+## Run a concurrency benchmark
 
-The existing 21 metric and streaming-client unit tests pass. The eight new
-localhost HTTP integration tests and `make smoke` could not be executed in the
-restricted preparation environment because opening a localhost port requires
-permission. Run `make check` and `make smoke` on your machine to complete that
-validation. No GPU or downloaded model is required.
+Start the simulator in one terminal and leave it running:
+
+```bash
+make mock
+```
+
+From the repository root in a second terminal:
+
+```bash
+make benchmark
+```
+
+The default `configs/mock.json` sends two warmup requests, then measures 24
+requests with at most four in flight and a 32-unit output budget. It samples
+`data/prompts.jsonl` deterministically with seed 42 and records its SHA-256.
+The server must already be running; the benchmark does not launch or deploy it.
+
+The output is `results/mock-benchmark.json`. It contains per-request results,
+configuration, workload hash, client environment, creation time, and a summary
+of latency, successful request/token throughput, error rate, and SLO goodput.
+Mock output is marked `backend: mock` and `synthetic: true`; its token counts
+and timings provide no evidence of model or GPU performance.
+
+Change the concurrency and preserve a separate run:
+
+```bash
+PYTHONPATH=src python3 -m inference_lab.benchmark \
+  --config configs/mock.json --concurrency 8 --label mock-c8 \
+  --output results/mock-c8.json
+```
+
+Warmup requests are excluded from both the saved request records and measured
+run duration. Failed measured requests remain in the records and error rate.
+The CLI saves a completed run and returns exit code 1 if measured requests fail;
+configuration, health, and warmup failures return exit code 2. Inspect the error
+instead of treating a failed run as successful capacity evidence.
+
+This is a closed-loop workload: each worker waits for its current request before
+sending another. It limits simultaneous requests, rather than offering an
+independent arrival rate. The measured interval includes client worker startup
+and the final drain. Read it as a workload-specific comparison, not an open-loop
+production capacity estimate. Output paths can be reused, so choose distinct
+filenames when preserving comparisons.
+
+## Validation
+
+```bash
+make unit
+```
+
+The 32 metric, client, and benchmark orchestration unit tests pass without
+opening network sockets. Runner tests use simulated request results to check concurrency,
+warmup exclusion, reproducibility, failure retention, and the result artifact.
+The existing simulator HTTP integration tests and live `make smoke` / benchmark
+commands still require localhost access. They remain pending in the restricted
+preparation environment. Run `make check`, `make smoke`, and the commands above
+on your machine to verify the complete HTTP path. No GPU is required.
 
 ## Repository layout
 
@@ -155,21 +207,27 @@ validation. No GPU or downloaded model is required.
 ├── LICENSE
 ├── Makefile
 ├── pyproject.toml
+├── configs/
+│   └── mock.json
+├── data/
+│   └── prompts.jsonl
 ├── src/inference_lab/
 │   ├── __init__.py
 │   ├── metrics.py
 │   ├── client.py
-│   └── mock_server.py
+│   ├── mock_server.py
+│   └── benchmark.py
 ├── scripts/
 │   └── smoke.py
 └── tests/
     ├── test_metrics.py
     ├── test_client.py
-    └── test_mock_server.py
+    ├── test_mock_server.py
+    └── test_benchmark.py
 ```
 
-The next implementation step is a fixed-concurrency benchmark runner that
-preserves per-request results and excludes warmup from measurement.
+The next implementation step is an offline comparison report for the recorded
+benchmark JSON files.
 
 ## License
 
