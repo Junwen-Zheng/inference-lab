@@ -3,8 +3,9 @@
 A project to deploy an open language model with vLLM on Kubernetes and study
 how serving configuration affects latency, throughput, and answer quality.
 
-**Status:** metric calculations and unit tests implemented. Serving, benchmarking,
-and optimisation are planned; no deployment or performance results are claimed yet.
+**Status:** metric calculations and a measured streaming completions client are
+implemented and unit tested. Serving deployment, load benchmarking, and
+optimisation are planned; no GPU performance results are claimed yet.
 
 ## Engineering question
 
@@ -49,8 +50,8 @@ If your Python executable has a different name:
 make check PYTHON=python3.12
 ```
 
-This checks Python syntax, imports the package, and runs the metric tests.
-Run only the tests with `make test`. No inference runs yet.
+This checks Python syntax, imports the package, and runs the metric and streaming-client tests.
+Run only the tests with `make test`. The tests use an in-memory HTTP transport; they need no model server or GPU.
 
 ## Metric definitions
 
@@ -75,6 +76,29 @@ two-second run, and a third request fails. The run has 1 successful request/s,
 15 output tokens/s, and error rate 1/3. If only one response meets both latency
 limits, goodput is 0.5 requests/s. The unit tests verify this example.
 
+## Streaming client
+
+`inference_lab.client.request_completion` sends one streamed request to a
+vLLM-compatible `/v1/completions` endpoint. It returns the same `RequestResult`
+record used by the metric module, including generated text, HTTP status, token
+usage, timings, and any transport or protocol error.
+
+- Base URLs may be an HTTP(S) origin or end in `/v1`.
+- TTFT measures request start to the first nonempty text event; end-to-end
+  latency ends when `[DONE]` arrives.
+- Token counts come from the server's final usage, never the number of chunks.
+- TPOT is an aggregate estimate: `(E2E - TTFT) / (output_tokens - 1)` for at
+  least two output tokens. E2E includes usage and stream-finalisation overhead.
+- Gaps between text chunks remain transport observations, not token intervals.
+- Socket timeouts and a deadline limit the connected HTTP stream. Missing usage,
+  truncated streams, malformed events, and HTTP failures are recorded as failed
+  requests rather than successful measurements.
+
+The client uses only the Python standard library. If the server requires a key,
+set `INFERENCE_API_KEY` in your environment; it is sent as a Bearer header and
+is not part of the result record. A compatible running server is needed for a
+real completion; the current unit tests use simulated responses.
+
 ## Repository layout
 
 ```text
@@ -86,12 +110,15 @@ limits, goodput is 0.5 requests/s. The unit tests verify this example.
 ├── pyproject.toml
 ├── src/inference_lab/
 │   ├── __init__.py
-│   └── metrics.py
+│   ├── metrics.py
+│   └── client.py
 └── tests/
-    └── test_metrics.py
+    ├── test_metrics.py
+    └── test_client.py
 ```
 
-The next implementation step is a measured streaming completions client.
+The next implementation step is a local CPU streaming simulator for an
+end-to-end HTTP smoke check.
 
 ## License
 
