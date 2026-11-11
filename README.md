@@ -3,9 +3,10 @@
 A project to deploy an open language model with vLLM on Kubernetes and study
 how serving configuration affects latency, throughput, and answer quality.
 
-**Status:** metric calculations and a measured streaming completions client are
-implemented and unit tested. Serving deployment, load benchmarking, and
-optimisation are planned; no GPU performance results are claimed yet.
+**Status:** metric calculations, a measured streaming client, and a local CPU
+streaming simulator are implemented. Unit tests and an HTTP smoke check run
+without a GPU. Real model serving, load benchmarking, and optimisation are
+planned; no GPU performance results are claimed yet.
 
 ## Engineering question
 
@@ -50,8 +51,10 @@ If your Python executable has a different name:
 make check PYTHON=python3.12
 ```
 
-This checks Python syntax, imports the package, and runs the metric and streaming-client tests.
-Run only the tests with `make test`. The tests use an in-memory HTTP transport; they need no model server or GPU.
+This checks Python syntax, imports the package, and runs all tests. Run only
+the tests with `make test`. Client unit tests use an in-memory HTTP transport;
+simulator integration tests open a temporary loopback port. Neither requires
+a GPU or model download.
 
 ## Metric definitions
 
@@ -99,6 +102,50 @@ set `INFERENCE_API_KEY` in your environment; it is sent as a Bearer header and
 is not part of the result record. A compatible running server is needed for a
 real completion; the current unit tests use simulated responses.
 
+## Run the local HTTP smoke check
+
+```bash
+make smoke
+```
+
+This starts the synthetic server on an unused `127.0.0.1` port, sends one
+streaming completion through the real HTTP client, checks four mock output
+units and nonempty text, saves `results/smoke.json`, and stops the server even
+if the check fails. The JSON includes client timing, usage, output, and any
+error, with explicit `backend: mock` and `synthetic: true` labels.
+
+Expected output starts with:
+
+```text
+SYNTHETIC HTTP streaming smoke passed: 4 reported mock tokens.
+```
+
+To inspect a continuously running simulator, run `make mock` and stop it with
+Ctrl+C. It listens on `127.0.0.1:8000` by default. The endpoints are:
+
+| Endpoint | Fixture behaviour |
+| --- | --- |
+| `GET /health` | Reports healthy status with a mock-backend marker. |
+| `GET /v1/models` | Lists the served alias `inference-model`. |
+| `POST /v1/completions` | Streams `synthetic_N` text, a usage event, and `[DONE]`. |
+
+The fixture validates request shape, alias, output limit, and streaming flag.
+It supports simultaneous local connections and returns JSON errors for invalid
+requests. Prompt counts are whitespace counts; output units and delays are
+synthetic. The fixture performs no model inference or real tokenisation.
+
+This smoke check verifies HTTP framing, stream parsing, measurement plumbing,
+and cleanup. Its timings are not evidence of model or GPU performance.
+Generated `results/` remain ignored by Git.
+
+## Delivery validation
+
+The existing 21 metric and streaming-client unit tests pass. The eight new
+localhost HTTP integration tests and `make smoke` could not be executed in the
+restricted preparation environment because opening a localhost port requires
+permission. Run `make check` and `make smoke` on your machine to complete that
+validation. No GPU or downloaded model is required.
+
 ## Repository layout
 
 ```text
@@ -111,14 +158,18 @@ real completion; the current unit tests use simulated responses.
 ├── src/inference_lab/
 │   ├── __init__.py
 │   ├── metrics.py
-│   └── client.py
+│   ├── client.py
+│   └── mock_server.py
+├── scripts/
+│   └── smoke.py
 └── tests/
     ├── test_metrics.py
-    └── test_client.py
+    ├── test_client.py
+    └── test_mock_server.py
 ```
 
-The next implementation step is a local CPU streaming simulator for an
-end-to-end HTTP smoke check.
+The next implementation step is a fixed-concurrency benchmark runner that
+preserves per-request results and excludes warmup from measurement.
 
 ## License
 
