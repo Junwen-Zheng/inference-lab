@@ -2,15 +2,15 @@
 
 An LLM serving project for comparing latency and throughput as batching and
 quantisation settings change. The target is an open model served by vLLM on
-Kubernetes; deployment and GPU experiments are still planned.
+Kubernetes; cluster deployment and GPU measurements are still planned.
 
 Implemented so far: streaming HTTP client, latency metrics, a synthetic server,
-a concurrent benchmark runner, and offline HTML/CSV reports. No model or GPU
-performance results have been collected.
+a concurrent benchmark runner, offline HTML/CSV reports, and pinned local vLLM
+launch profiles. No model or GPU performance results have been collected.
 
 ## Local setup
 
-Python 3.10+ and Make are required. All current code uses the standard library.
+Python 3.10+ and Make are required. The benchmark tooling uses the standard library.
 Run commands from the repository root:
 
 ```bash
@@ -78,6 +78,17 @@ same explicit `comparison_group`; that setting records intent, not equivalent
 answer quality. Environment differences are flagged for inspection. Reports
 show missing measurements as `N/A`, with blank CSV cells.
 
+## Serve a real model
+
+```bash
+make gpu-plan
+```
+
+This previews a pinned Docker command without starting anything. The
+`baseline`, `batched`, and `awq` profiles require a Linux NVIDIA GPU host to run.
+See [local serving](docs/local-serving.md) for prerequisites, launch commands,
+runtime capture, and the matching `configs/gpu.json` benchmark.
+
 ## Measurement definitions
 
 | Metric | Definition |
@@ -104,7 +115,8 @@ are recorded as request failures.
 ## Validation and next experiments
 
 The offline tests cover metrics, stream parsing, benchmark orchestration, and
-report generation using simulated inputs. HTTP integration tests and live
+report generation using simulated inputs, plus launcher checks with a fake
+Docker executable. `make unit` also checks Bash syntax. HTTP integration tests and live
 smoke/benchmark checks remain unverified in the restricted preparation
 environment. Run `make check`, `make smoke`, and the benchmark commands locally
 to verify that path.

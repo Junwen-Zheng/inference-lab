@@ -1,7 +1,7 @@
 PYTHON ?= python3
 export PYTHONPATH := $(CURDIR)/src:$(PYTHONPATH)
 
-.PHONY: check test smoke mock benchmark report unit
+.PHONY: check test smoke mock benchmark report gpu-plan unit
 check:
 	$(PYTHON) -m compileall -q src tests scripts
 	$(PYTHON) -c "import inference_lab; print('Package import passed')"
@@ -22,8 +22,13 @@ benchmark:
 report:
 	$(PYTHON) -m inference_lab.report results/mock-benchmark.json --output results/report.html --csv results/summary.csv
 
+gpu-plan:
+	bash deploy/docker/run.sh baseline --dry-run
+
 unit:
+	bash -n deploy/docker/run.sh
 	$(PYTHON) -m unittest discover -s tests -p 'test_metrics.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_client.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_benchmark.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_report.py' -v
+	$(PYTHON) -m unittest discover -s tests -p 'test_launch.py' -v
