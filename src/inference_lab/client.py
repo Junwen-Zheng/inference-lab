@@ -1,4 +1,4 @@
-"""OpenAI-compatible completions SSE client; no SDK or tokenizer dependency."""
+"""Streaming client for the OpenAI-compatible completions endpoint."""
 from __future__ import annotations
 
 import http.client
@@ -14,7 +14,6 @@ from .metrics import RequestResult
 
 
 def iter_sse_data(lines):
-    """Read SSE frames, including comments, CRLF and multiline data fields."""
     fields = []
     for line in lines:
         line = line.decode("utf-8") if isinstance(line, bytes) else line
@@ -89,9 +88,8 @@ def request_completion(base_url: str, model: str, prompt: str, max_tokens: int =
         done = False
 
         def timed_lines():
-            # Limit the whole stream, including a stalled server or endless comments.
-            # Keep the socket captured before getresponse: Connection: close may
-            # detach it from HTTPConnection while HTTPResponse still owns it.
+            # Connection: close can detach the socket from HTTPConnection, so use
+            # the socket captured before getresponse to enforce the deadline.
             while True:
                 remaining = timeout_s - (time.perf_counter() - started)
                 if remaining <= 0:

@@ -86,8 +86,7 @@ class MockHandler(BaseHTTPRequestHandler):
 
 
 class MockServer(ThreadingHTTPServer):
-    # The stdlib default backlog of five can reset short connection bursts on
-    # macOS. Keep fixture admission above the documented concurrency grid.
+    # The default backlog of five can reset connection bursts on macOS.
     request_queue_size = 128
 
 

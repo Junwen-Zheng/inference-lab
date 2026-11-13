@@ -118,8 +118,7 @@ def run_benchmark(config, environment=None):
         result = send(-i - 1, rows[i % len(rows)]["prompt"] + f"\nWarmup tag: {i}")
         if not result.success:
             raise ValueError("warmup failed: " + str(result.error))
-    # Submit one worker per concurrency slot, rather than queueing one Future
-    # per request. Each worker sends its next request after the previous ends.
+    # Bound both in-flight requests and queued futures to the concurrency limit.
     jobs = iter(enumerate(prompts))
     job_lock = threading.Lock()
 

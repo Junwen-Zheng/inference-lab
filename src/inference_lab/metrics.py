@@ -1,8 +1,4 @@
-"""Summarise measured requests; latency inputs are seconds, summaries milliseconds.
-
-Failures remain in the error rate but do not enter successful latency statistics.
-Token throughput is unavailable if a successful request has unknown token usage.
-"""
+"""Summarise requests; input latencies are seconds, summaries milliseconds."""
 from __future__ import annotations
 
 import math
@@ -27,7 +23,6 @@ class RequestResult:
 
 
 def percentile(values: Iterable[float], q: float) -> float | None:
-    """Linear interpolation, including exact endpoints; empty sets are missing."""
     if not 0 <= q <= 100:
         raise ValueError("percentile must be between 0 and 100")
     data = sorted(values)
