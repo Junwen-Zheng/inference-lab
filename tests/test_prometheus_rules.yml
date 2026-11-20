@@ -1,0 +1,277 @@
+rule_files:
+  - ../deploy/observability/rules.yml
+evaluation_interval: 15s
+fuzzy_compare: true
+
+tests:
+  - name: aggregate engines by model and ignore other jobs and unfinished requests
+    interval: 15s
+    input_series:
+      - series: 'vllm:generation_tokens_total{job="vllm",model_name="inference-model",engine_index="0"}'
+        values: '0+150x8'
+      - series: 'vllm:generation_tokens_total{job="vllm",model_name="inference-model",engine_index="1"}'
+        values: '0+300x8'
+      - series: 'vllm:generation_tokens_total{job="vllm",model_name="other-model",engine_index="0"}'
+        values: '0+75x8'
+      - series: 'vllm:generation_tokens_total{job="other",model_name="inference-model"}'
+        values: '0+10000x8'
+      - series: 'vllm:request_success_total{job="vllm",model_name="inference-model",engine_index="0",finished_reason="stop"}'
+        values: '0+15x8'
+      - series: 'vllm:request_success_total{job="vllm",model_name="inference-model",engine_index="1",finished_reason="length"}'
+        values: '0+30x8'
+      - series: 'vllm:request_success_total{job="vllm",model_name="inference-model",finished_reason="abort"}'
+        values: '0+450x8'
+      - series: 'vllm:request_success_total{job="vllm",model_name="inference-model",finished_reason="error"}'
+        values: '0+450x8'
+      - series: 'vllm:request_success_total{job="vllm",model_name="inference-model",finished_reason="repetition"}'
+        values: '0+450x8'
+      - series: 'vllm:request_success_total{job="vllm",model_name="other-model",finished_reason="stop"}'
+        values: '0+15x8'
+      - series: 'vllm:request_success_total{job="other",model_name="inference-model",finished_reason="stop"}'
+        values: '0+10000x8'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",engine_index="0",le="1"}'
+        values: '0+50x8'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",engine_index="0",le="2"}'
+        values: '0+100x8'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",engine_index="0",le="4"}'
+        values: '0+100x8'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",engine_index="0",le="+Inf"}'
+        values: '0+100x8'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",engine_index="1",le="1"}'
+        values: '0+0x8'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",engine_index="1",le="2"}'
+        values: '0+0x8'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",engine_index="1",le="4"}'
+        values: '0+100x8'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",engine_index="1",le="+Inf"}'
+        values: '0+100x8'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="other",model_name="inference-model",le="1"}'
+        values: '0+10000x8'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="other",model_name="inference-model",le="+Inf"}'
+        values: '0+10000x8'
+      - series: 'vllm:e2e_request_latency_seconds_bucket{job="vllm",model_name="inference-model",engine_index="0",le="5"}'
+        values: '0+50x8'
+      - series: 'vllm:e2e_request_latency_seconds_bucket{job="vllm",model_name="inference-model",engine_index="0",le="10"}'
+        values: '0+100x8'
+      - series: 'vllm:e2e_request_latency_seconds_bucket{job="vllm",model_name="inference-model",engine_index="0",le="20"}'
+        values: '0+100x8'
+      - series: 'vllm:e2e_request_latency_seconds_bucket{job="vllm",model_name="inference-model",engine_index="0",le="+Inf"}'
+        values: '0+100x8'
+      - series: 'vllm:e2e_request_latency_seconds_bucket{job="vllm",model_name="inference-model",engine_index="1",le="5"}'
+        values: '0+0x8'
+      - series: 'vllm:e2e_request_latency_seconds_bucket{job="vllm",model_name="inference-model",engine_index="1",le="10"}'
+        values: '0+0x8'
+      - series: 'vllm:e2e_request_latency_seconds_bucket{job="vllm",model_name="inference-model",engine_index="1",le="20"}'
+        values: '0+100x8'
+      - series: 'vllm:e2e_request_latency_seconds_bucket{job="vllm",model_name="inference-model",engine_index="1",le="+Inf"}'
+        values: '0+100x8'
+      - series: 'vllm:e2e_request_latency_seconds_bucket{job="other",model_name="inference-model",le="5"}'
+        values: '0+10000x8'
+      - series: 'vllm:e2e_request_latency_seconds_bucket{job="other",model_name="inference-model",le="+Inf"}'
+        values: '0+10000x8'
+    promql_expr_test:
+      - expr: inference_lab:output_tokens_per_second:rate1m
+        eval_time: 1m
+        exp_samples:
+          - labels: 'inference_lab:output_tokens_per_second:rate1m{model_name="inference-model"}'
+            value: 30
+          - labels: 'inference_lab:output_tokens_per_second:rate1m{model_name="other-model"}'
+            value: 5
+      - expr: inference_lab:requests_per_second:rate1m
+        eval_time: 1m
+        exp_samples:
+          - labels: 'inference_lab:requests_per_second:rate1m{model_name="inference-model"}'
+            value: 3
+          - labels: 'inference_lab:requests_per_second:rate1m{model_name="other-model"}'
+            value: 1
+      - expr: inference_lab:ttft_seconds:p95
+        eval_time: 1m
+        exp_samples:
+          - labels: 'inference_lab:ttft_seconds:p95{model_name="inference-model"}'
+            value: 3.8
+      - expr: inference_lab:e2e_seconds:p95
+        eval_time: 1m
+        exp_samples:
+          - labels: 'inference_lab:e2e_seconds:p95{model_name="inference-model"}'
+            value: 19
+
+  - name: calculate rates across counter resets
+    interval: 15s
+    input_series:
+      - series: 'vllm:generation_tokens_total{job="vllm",model_name="inference-model"}'
+        values: '0 150 300 150 300'
+      - series: 'vllm:request_success_total{job="vllm",model_name="inference-model",finished_reason="stop"}'
+        values: '0 15 30 15 30'
+    promql_expr_test:
+      - expr: inference_lab:output_tokens_per_second:rate1m
+        eval_time: 1m
+        exp_samples:
+          - labels: 'inference_lab:output_tokens_per_second:rate1m{model_name="inference-model"}'
+            value: 10
+      - expr: inference_lab:requests_per_second:rate1m
+        eval_time: 1m
+        exp_samples:
+          - labels: 'inference_lab:requests_per_second:rate1m{model_name="inference-model"}'
+            value: 1
+
+  - name: require two minutes of target failure and queue pressure
+    interval: 15s
+    input_series:
+      - series: 'up{job="vllm",instance="vllm.inference-lab.svc:8000"}'
+        values: '0+0x12'
+      - series: 'up{job="other",instance="other:8000"}'
+        values: '0+0x12'
+      - series: 'vllm:num_requests_waiting{job="vllm",model_name="inference-model",engine_index="0"}'
+        values: '3+0x12'
+      - series: 'vllm:num_requests_waiting{job="vllm",model_name="inference-model",engine_index="1"}'
+        values: '2+0x12'
+    alert_rule_test:
+      - eval_time: 1m45s
+        alertname: VllmTargetUnavailable
+        exp_alerts: []
+      - eval_time: 1m45s
+        alertname: VllmQueueSustained
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: VllmTargetUnavailable
+        exp_alerts:
+          - exp_labels:
+              job: vllm
+              instance: vllm.inference-lab.svc:8000
+              severity: warning
+            exp_annotations:
+              summary: vLLM metrics target is unavailable.
+      - eval_time: 2m
+        alertname: VllmQueueSustained
+        exp_alerts:
+          - exp_labels:
+              model_name: inference-model
+              severity: warning
+            exp_annotations:
+              summary: vLLM has more than four queued requests.
+
+  - name: transient failures clear and queue recovery resets the timer
+    interval: 15s
+    input_series:
+      - series: 'up{job="vllm",instance="vllm.inference-lab.svc:8000"}'
+        values: '0+0x3 1+0x16'
+      - series: 'vllm:num_requests_waiting{job="vllm",model_name="inference-model"}'
+        values: '5+0x3 4+0x4 5+0x12'
+      - series: 'vllm:num_requests_waiting{job="other",model_name="other-model"}'
+        values: '100+0x20'
+    alert_rule_test:
+      - eval_time: 1m45s
+        alertname: VllmTargetUnavailable
+        exp_alerts: []
+      - eval_time: 1m45s
+        alertname: VllmQueueSustained
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: VllmQueueSustained
+        exp_alerts: []
+      - eval_time: 4m15s
+        alertname: VllmTargetUnavailable
+        exp_alerts: []
+      - eval_time: 4m15s
+        alertname: VllmQueueSustained
+        exp_alerts:
+          - exp_labels:
+              model_name: inference-model
+              severity: warning
+            exp_annotations:
+              summary: vLLM has more than four queued requests.
+
+  - name: slow TTFT must persist and clears after its measurement window recovers
+    interval: 15s
+    input_series:
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",le="1"}'
+        values: '0+0x24 100+100x24'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",le="2"}'
+        values: '0+0x24 100+100x24'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",le="4"}'
+        values: '0+100x49'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",le="+Inf"}'
+        values: '0+100x49'
+    promql_expr_test:
+      - expr: inference_lab:ttft_seconds:p95
+        eval_time: 5m
+        exp_samples:
+          - labels: 'inference_lab:ttft_seconds:p95{model_name="inference-model"}'
+            value: 3.9
+      - expr: inference_lab:ttft_seconds:p95
+        eval_time: 11m15s
+        exp_samples:
+          - labels: 'inference_lab:ttft_seconds:p95{model_name="inference-model"}'
+            value: 0.95
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: VllmTtftHigh
+        exp_alerts: []
+      - eval_time: 5m15s
+        alertname: VllmTtftHigh
+        exp_alerts:
+          - exp_labels:
+              model_name: inference-model
+              severity: warning
+            exp_annotations:
+              summary: vLLM p95 time to first token exceeds two seconds.
+      - eval_time: 11m15s
+        alertname: VllmTtftHigh
+        exp_alerts: []
+
+  - name: idle histograms produce no latency alerts
+    interval: 15s
+    input_series:
+      - series: 'up{job="vllm",instance="vllm.inference-lab.svc:8000"}'
+        values: '1+0x40'
+      - series: 'vllm:generation_tokens_total{job="vllm",model_name="inference-model"}'
+        values: '0+0x40'
+      - series: 'vllm:request_success_total{job="vllm",model_name="inference-model",finished_reason="stop"}'
+        values: '0+0x40'
+      - series: 'vllm:num_requests_waiting{job="vllm",model_name="inference-model"}'
+        values: '0+0x40'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",le="1"}'
+        values: '0+0x40'
+      - series: 'vllm:time_to_first_token_seconds_bucket{job="vllm",model_name="inference-model",le="+Inf"}'
+        values: '0+0x40'
+    promql_expr_test:
+      - expr: inference_lab:output_tokens_per_second:rate1m
+        eval_time: 10m
+        exp_samples:
+          - labels: 'inference_lab:output_tokens_per_second:rate1m{model_name="inference-model"}'
+            value: 0
+      - expr: inference_lab:ttft_seconds:p95 != bool inference_lab:ttft_seconds:p95
+        eval_time: 10m
+        exp_samples:
+          - labels: '{model_name="inference-model"}'
+            value: 1
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: VllmTargetUnavailable
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: VllmQueueSustained
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: VllmTtftHigh
+        exp_alerts: []
+
+  - name: missing vLLM series stay absent
+    interval: 15s
+    input_series:
+      - series: 'up{job="other",instance="other:8000"}'
+        values: '0+0x40'
+    promql_expr_test:
+      - expr: '{__name__=~"inference_lab:.*"}'
+        eval_time: 10m
+        exp_samples: []
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: VllmTargetUnavailable
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: VllmQueueSustained
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: VllmTtftHigh
+        exp_alerts: []

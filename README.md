@@ -7,7 +7,8 @@ Kubernetes; GPU measurements are still pending.
 Implemented so far: streaming HTTP client, latency metrics, a synthetic server,
 a concurrent benchmark runner, repeated sweeps, offline HTML/CSV reports, and
 pinned local vLLM launch profiles. Kubernetes baseline, batching, and AWQ profiles render locally;
-they have not been deployed to a cluster. No GPU performance results have been collected.
+they have not been deployed to a cluster. Optional Prometheus monitoring includes
+serving metrics and alert rules. No GPU performance results have been collected.
 
 ## Local setup
 
@@ -115,6 +116,17 @@ See [Kubernetes serving](docs/kubernetes.md) for the profile differences,
 switching deployments, and recording comparable runs. Rendering is offline;
 `PROFILE` also selects the Docker command shown by `make gpu-plan`.
 
+## Monitor serving
+
+```bash
+make monitoring-render
+make monitoring-check
+```
+
+Rendering needs `kubectl`; config and rule tests need `promtool` 3.15.1. Neither
+command connects to a cluster. See [monitoring](docs/monitoring.md) for deployment,
+queries, alert thresholds, and the differences from client benchmark metrics.
+
 ## Measurement definitions
 
 | Metric | Definition |
@@ -140,11 +152,12 @@ are recorded as request failures.
 
 ## Validation and next experiments
 
-The offline tests cover metrics, stream parsing, benchmark orchestration, and
-report and sweep orchestration using simulated inputs, plus launcher checks with fake Docker
-and kubectl commands. `make unit` also checks Bash syntax. HTTP integration tests and live
-smoke/benchmark checks remain unverified in the restricted preparation
-environment. Run `make check`, `make smoke`, and the benchmark commands locally
+Offline tests cover metrics, stream parsing, benchmark and sweep orchestration,
+and report generation. Launcher tests use fake Docker and kubectl commands.
+`make unit` also checks Bash syntax. The monitoring manifests render locally;
+Promtool rule tests and live metric scraping remain unverified in the preparation
+environment. HTTP integration tests and live smoke/benchmark checks also remain
+unverified there. Run `make check`, `make smoke`, and the benchmark commands locally
 to verify that path.
 
 Real experiments will record GPU hardware, runtime and model revisions, then

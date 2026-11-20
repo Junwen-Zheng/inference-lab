@@ -1,9 +1,10 @@
 PYTHON ?= python3
+PROMTOOL ?= promtool
 PROFILE ?= baseline
 SWEEP_DIR ?= results/mock-sweep
 export PYTHONPATH := $(CURDIR)/src:$(PYTHONPATH)
 
-.PHONY: check test smoke mock benchmark sweep report gpu-plan k8s-render unit
+.PHONY: check test smoke mock benchmark sweep report gpu-plan k8s-render monitoring-render monitoring-check unit
 check:
 	$(PYTHON) -m compileall -q src tests scripts
 	$(PYTHON) -c "import inference_lab; print('Package import passed')"
@@ -32,6 +33,13 @@ gpu-plan:
 
 k8s-render:
 	@bash scripts/deploy.sh render "$(PROFILE)"
+
+monitoring-render:
+	@kubectl kustomize deploy/observability
+
+monitoring-check:
+	"$(PROMTOOL)" check config deploy/observability/prometheus.yml
+	"$(PROMTOOL)" test rules tests/test_prometheus_rules.yml
 
 unit:
 	bash -n deploy/docker/run.sh
