@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+labels:
+  - pairs:
+      inference-lab/profile: awq
+    includeTemplates: true
+    includeSelectors: false
+configMapGenerator:
+  - name: vllm-config
+    behavior: merge
+    literals:
+      - MODEL_ID=Qwen/Qwen2.5-1.5B-Instruct-AWQ
+      - MODEL_REVISION=3ecffa0ceb27851800f45519bab9c457a04405e1
+      - MAX_NUM_SEQS=32
+      - MAX_NUM_BATCHED_TOKENS=4096
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: vllm
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --quantization
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: awq

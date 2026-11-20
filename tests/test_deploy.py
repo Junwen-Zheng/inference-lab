@@ -59,8 +59,8 @@ class DeployTests(unittest.TestCase):
             return []
         return [json.loads(line) for line in self.record.read_text().splitlines()]
 
-    def overlay(self, repo=ROOT):
-        return str(repo / "deploy/k8s/overlays/baseline")
+    def overlay(self, repo=ROOT, profile="baseline"):
+        return str(repo / "deploy/k8s/overlays" / profile)
 
     def test_render_outputs_manifests_without_apply(self):
         result = self.run_deploy("render", "baseline")
@@ -93,13 +93,16 @@ class DeployTests(unittest.TestCase):
         self.stub.unlink()
         help_result = self.run_deploy("--help")
         self.assertEqual(help_result.returncode, 0, help_result.stderr)
-        self.assertIn("baseline", help_result.stdout + help_result.stderr)
+        for profile in ("baseline", "batched", "awq"):
+            self.assertIn(profile, help_result.stdout + help_result.stderr)
         for args in (
             (),
             ("render",),
             ("baseline",),
             ("unknown", "baseline"),
-            ("render", "awq"),
+            ("render", "unknown"),
+            ("render", "../base"),
+            ("render", "batched; echo injected"),
             ("render", "baseline", "extra"),
             ("--help", "baseline"),
         ):
@@ -108,6 +111,42 @@ class DeployTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 2, result.stderr)
                 self.assertTrue(result.stderr.strip())
         self.assertEqual(self.calls(), [])
+
+    def test_new_profiles_render_their_own_overlay(self):
+        for profile in ("batched", "awq"):
+            with self.subTest(profile=profile):
+                self.record.unlink(missing_ok=True)
+                result = self.run_deploy("render", profile)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.strip(), "kind: Deployment")
+                self.assertEqual(self.calls(), [["kustomize", self.overlay(profile=profile)]])
+
+    def test_new_profiles_use_client_dry_run_without_schema_download(self):
+        for profile in ("batched", "awq"):
+            with self.subTest(profile=profile):
+                self.record.unlink(missing_ok=True)
+                result = self.run_deploy("dry-run", profile)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(
+                    self.calls(),
+                    [["apply", "--dry-run=client", "--validate=false", "-k", self.overlay(profile=profile)]],
+                )
+
+    def test_new_profiles_apply_then_wait_for_rollout(self):
+        for profile in ("batched", "awq"):
+            with self.subTest(profile=profile):
+                self.record.unlink(missing_ok=True)
+                result = self.run_deploy("apply", profile)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f"Applying {profile} to context test-gpu-context", result.stderr)
+                self.assertEqual(
+                    self.calls(),
+                    [
+                        ["config", "current-context"],
+                        ["apply", "-k", self.overlay(profile=profile)],
+                        ["-n", "inference-lab", "rollout", "status", "deployment/vllm", "--timeout=40m"],
+                    ],
+                )
 
     def test_repository_path_with_spaces_is_one_argument_from_other_directory(self):
         repo = self.folder / "repository with spaces"

@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+labels:
+  - pairs:
+      inference-lab/profile: batched
+    includeTemplates: true
+    includeSelectors: false
+configMapGenerator:
+  - name: vllm-config
+    behavior: merge
+    literals:
+      - MAX_NUM_SEQS=32
+      - MAX_NUM_BATCHED_TOKENS=4096

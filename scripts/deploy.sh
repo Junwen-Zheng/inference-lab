@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-    printf 'Usage: bash scripts/deploy.sh {render|dry-run|apply} baseline\n'
+    printf 'Usage: bash scripts/deploy.sh {render|dry-run|apply} {baseline|batched|awq}\n'
 }
 
 if [[ $# -eq 1 && $1 == --help ]]; then
@@ -20,10 +20,13 @@ case "$action" in
     render|dry-run|apply) ;;
     *) usage >&2; exit 2 ;;
 esac
-if [[ $profile != baseline ]]; then
-    printf 'Unsupported profile: %s (expected baseline)\n' "$profile" >&2
-    exit 2
-fi
+case "$profile" in
+    baseline|batched|awq) ;;
+    *)
+        printf 'Unsupported profile: %s (expected baseline, batched, or awq)\n' "$profile" >&2
+        exit 2
+        ;;
+esac
 if ! command -v kubectl >/dev/null 2>&1; then
     printf 'kubectl is required.\n' >&2
     exit 127

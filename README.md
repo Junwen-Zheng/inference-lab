@@ -6,8 +6,8 @@ Kubernetes; GPU measurements are still pending.
 
 Implemented so far: streaming HTTP client, latency metrics, a synthetic server,
 a concurrent benchmark runner, offline HTML/CSV reports, and pinned local vLLM
-launch profiles. A Kubernetes baseline is defined and rendered locally; it has
-not been deployed to a cluster. No GPU performance results have been collected.
+launch profiles. Kubernetes baseline, batching, and AWQ profiles render locally;
+they have not been deployed to a cluster. No GPU performance results have been collected.
 
 ## Local setup
 
@@ -90,14 +90,17 @@ This previews a pinned Docker command without starting anything. The
 See [local serving](docs/local-serving.md) for prerequisites, launch commands,
 runtime capture, and the matching `configs/gpu.json` benchmark.
 
-To inspect the Kubernetes baseline with `kubectl` installed:
+To inspect the Kubernetes profiles with `kubectl` installed:
 
 ```bash
 make k8s-render
+make k8s-render PROFILE=batched
+make k8s-render PROFILE=awq
 ```
 
-See [Kubernetes serving](docs/kubernetes.md) for cluster prerequisites, applying
-the manifests, port-forwarding, and runtime evidence. Rendering is offline.
+See [Kubernetes serving](docs/kubernetes.md) for the profile differences,
+switching deployments, and recording comparable runs. Rendering is offline;
+`PROFILE` also selects the Docker command shown by `make gpu-plan`.
 
 ## Measurement definitions
 

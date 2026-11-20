@@ -1,4 +1,5 @@
 PYTHON ?= python3
+PROFILE ?= baseline
 export PYTHONPATH := $(CURDIR)/src:$(PYTHONPATH)
 
 .PHONY: check test smoke mock benchmark report gpu-plan k8s-render unit
@@ -23,10 +24,10 @@ report:
 	$(PYTHON) -m inference_lab.report results/mock-benchmark.json --output results/report.html --csv results/summary.csv
 
 gpu-plan:
-	bash deploy/docker/run.sh baseline --dry-run
+	bash deploy/docker/run.sh "$(PROFILE)" --dry-run
 
 k8s-render:
-	@bash scripts/deploy.sh render baseline
+	@bash scripts/deploy.sh render "$(PROFILE)"
 
 unit:
 	bash -n deploy/docker/run.sh

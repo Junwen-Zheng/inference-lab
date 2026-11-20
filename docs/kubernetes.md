@@ -1,8 +1,19 @@
-# Kubernetes baseline
+# Kubernetes serving profiles
 
-This adds the FP16 baseline from [local serving](local-serving.md) as one GPU
-Pod behind a ClusterIP Service. Manifests have been rendered locally; cluster
-admission, scheduling, model loading, and inference remain unverified.
+The profiles from [local serving](local-serving.md) run as one GPU Pod behind a
+ClusterIP Service. All three manifests render locally; cluster admission,
+scheduling, model loading, and inference remain unverified.
+
+| Profile | Checkpoint | Maximum sequences | Batched tokens |
+| --- | --- | ---: | ---: |
+| `baseline` | Qwen2.5-1.5B-Instruct, FP16 | 1 | 2048 |
+| `batched` | Same FP16 checkpoint and revision | 32 | 4096 |
+| `awq` | Qwen2.5-1.5B-Instruct-AWQ, 4-bit weights | 32 | 4096 |
+
+Baseline to batched changes the sequence limit and token budget together. Batched
+to AWQ holds those settings fixed and changes the checkpoint and quantisation
+flag. All profiles retain the image, context limit, FP16 activations, seed, and
+disabled prefix caching from Day 7. Model and tokenizer revisions stay pinned.
 
 ## Prepare a cluster
 
@@ -34,6 +45,8 @@ From the repository root:
 
 ```bash
 make k8s-render > /tmp/inference-lab-baseline.yaml
+make k8s-render PROFILE=batched > /tmp/inference-lab-batched.yaml
+make k8s-render PROFILE=awq > /tmp/inference-lab-awq.yaml
 ```
 
 Rendering is offline and creates no cluster resources. Inspect the result;
@@ -59,7 +72,9 @@ The Deployment uses `Recreate` to release its single GPU before replacing the
 Pod, causing downtime during updates. Model files persist at `/cache` on the
 PVC. A 2 GiB memory-backed `/dev/shm` volume counts against Pod memory. The
 checkpoint, tokenizer revision, context budget, and scheduler settings match
-the Day 7 baseline; batching and AWQ cluster overlays are a later increment.
+the matching Day 7 Docker profile. New overlays merge only the intended
+ConfigMap values; AWQ also appends `--quantization awq`. The shared base retains
+the resource requests, probes, Service, and cache.
 
 ## Connect and measure
 
@@ -103,6 +118,45 @@ Check those files for collection errors. Tags can be republished; the Pod image
 ID records what actually ran. Record any cluster-specific changes and include
 reviewed metadata through the benchmark's `--environment` option when comparing
 runs. Repeat measurements on fixed hardware before drawing performance claims.
+
+## Switch profiles and compare
+
+All profiles use the same namespace, Deployment, Service, and PVC. Applying one
+replaces the current profile; it does not create another GPU server. After saving
+the baseline run and runtime evidence, switch to batched:
+
+```bash
+bash scripts/deploy.sh apply batched
+```
+
+Reconnect the port-forward after Pod replacement. Check health and models again,
+then run the same benchmark with a separate label and output path:
+
+```bash
+PYTHONPATH=src python3 -m inference_lab.benchmark \
+  --config configs/gpu.json --label k8s-batched-c4 \
+  --output results/k8s-batched/run.json
+```
+
+Capture its manifest and runtime evidence using the commands above with
+`batched` and `results/k8s-batched`. Repeat for `awq`, using `k8s-awq-c4` and
+`results/k8s-awq`. Keep workload, seed, request count, output limit, client
+concurrency, latency targets, and GPU hardware fixed. Do not compare results
+from different node GPU types just because the manifests are identical.
+
+After collecting all three real runs:
+
+```bash
+PYTHONPATH=src python3 -m inference_lab.report \
+  results/k8s-baseline/run.json results/k8s-batched/run.json results/k8s-awq/run.json \
+  --output results/k8s-comparison.html --csv results/k8s-comparison.csv
+```
+
+The server alias is always `inference-model`; the label does not prove which
+checkpoint ran. Check the saved manifest, Pod profile label, and image identity.
+These are experiment configurations, not measured improvements. Quantisation
+can change answers or reduce speed; a separate quality check and repeated runs
+are required before drawing conclusions.
 
 For a Pending or restarting Pod, inspect `kubectl -n inference-lab get pods,pvc`,
 `kubectl -n inference-lab describe pod POD_NAME`, and
