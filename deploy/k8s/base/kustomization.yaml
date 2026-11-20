@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: inference-lab
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - cache-pvc.yaml
+generatorOptions:
+  labels:
+    app.kubernetes.io/name: vllm-config
+configMapGenerator:
+  - name: vllm-config
+    literals:
+      - MODEL_ID=Qwen/Qwen2.5-1.5B-Instruct
+      - MODEL_REVISION=989aa7980e4cf806f80c7fef2b1adb7bc71aa306
+      - MAX_NUM_SEQS=1
+      - MAX_NUM_BATCHED_TOKENS=2048

@@ -2,11 +2,12 @@
 
 An LLM serving project for comparing latency and throughput as batching and
 quantisation settings change. The target is an open model served by vLLM on
-Kubernetes; cluster deployment and GPU measurements are still planned.
+Kubernetes; GPU measurements are still pending.
 
 Implemented so far: streaming HTTP client, latency metrics, a synthetic server,
 a concurrent benchmark runner, offline HTML/CSV reports, and pinned local vLLM
-launch profiles. No model or GPU performance results have been collected.
+launch profiles. A Kubernetes baseline is defined and rendered locally; it has
+not been deployed to a cluster. No GPU performance results have been collected.
 
 ## Local setup
 
@@ -89,6 +90,15 @@ This previews a pinned Docker command without starting anything. The
 See [local serving](docs/local-serving.md) for prerequisites, launch commands,
 runtime capture, and the matching `configs/gpu.json` benchmark.
 
+To inspect the Kubernetes baseline with `kubectl` installed:
+
+```bash
+make k8s-render
+```
+
+See [Kubernetes serving](docs/kubernetes.md) for cluster prerequisites, applying
+the manifests, port-forwarding, and runtime evidence. Rendering is offline.
+
 ## Measurement definitions
 
 | Metric | Definition |
@@ -115,8 +125,8 @@ are recorded as request failures.
 ## Validation and next experiments
 
 The offline tests cover metrics, stream parsing, benchmark orchestration, and
-report generation using simulated inputs, plus launcher checks with a fake
-Docker executable. `make unit` also checks Bash syntax. HTTP integration tests and live
+report generation using simulated inputs, plus launcher checks with fake Docker
+and kubectl commands. `make unit` also checks Bash syntax. HTTP integration tests and live
 smoke/benchmark checks remain unverified in the restricted preparation
 environment. Run `make check`, `make smoke`, and the benchmark commands locally
 to verify that path.

@@ -1,7 +1,7 @@
 PYTHON ?= python3
 export PYTHONPATH := $(CURDIR)/src:$(PYTHONPATH)
 
-.PHONY: check test smoke mock benchmark report gpu-plan unit
+.PHONY: check test smoke mock benchmark report gpu-plan k8s-render unit
 check:
 	$(PYTHON) -m compileall -q src tests scripts
 	$(PYTHON) -c "import inference_lab; print('Package import passed')"
@@ -25,10 +25,15 @@ report:
 gpu-plan:
 	bash deploy/docker/run.sh baseline --dry-run
 
+k8s-render:
+	@bash scripts/deploy.sh render baseline
+
 unit:
 	bash -n deploy/docker/run.sh
+	bash -n scripts/deploy.sh
 	$(PYTHON) -m unittest discover -s tests -p 'test_metrics.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_client.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_benchmark.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_report.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_launch.py' -v
+	$(PYTHON) -m unittest discover -s tests -p 'test_deploy.py' -v
