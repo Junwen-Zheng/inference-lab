@@ -1,8 +1,9 @@
 PYTHON ?= python3
 PROFILE ?= baseline
+SWEEP_DIR ?= results/mock-sweep
 export PYTHONPATH := $(CURDIR)/src:$(PYTHONPATH)
 
-.PHONY: check test smoke mock benchmark report gpu-plan k8s-render unit
+.PHONY: check test smoke mock benchmark sweep report gpu-plan k8s-render unit
 check:
 	$(PYTHON) -m compileall -q src tests scripts
 	$(PYTHON) -c "import inference_lab; print('Package import passed')"
@@ -19,6 +20,9 @@ mock:
 
 benchmark:
 	$(PYTHON) -m inference_lab.benchmark --config configs/mock.json --output results/mock-benchmark.json
+
+sweep:
+	$(PYTHON) -m inference_lab.sweep --config configs/mock.json --profile mock --concurrency 1 4 8 --repetitions 3 --cooldown-s 0 --output-dir "$(SWEEP_DIR)"
 
 report:
 	$(PYTHON) -m inference_lab.report results/mock-benchmark.json --output results/report.html --csv results/summary.csv
@@ -38,3 +42,4 @@ unit:
 	$(PYTHON) -m unittest discover -s tests -p 'test_report.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_launch.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_deploy.py' -v
+	$(PYTHON) -m unittest discover -s tests -p 'test_sweep.py' -v

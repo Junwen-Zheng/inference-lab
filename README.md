@@ -5,8 +5,8 @@ quantisation settings change. The target is an open model served by vLLM on
 Kubernetes; GPU measurements are still pending.
 
 Implemented so far: streaming HTTP client, latency metrics, a synthetic server,
-a concurrent benchmark runner, offline HTML/CSV reports, and pinned local vLLM
-launch profiles. Kubernetes baseline, batching, and AWQ profiles render locally;
+a concurrent benchmark runner, repeated sweeps, offline HTML/CSV reports, and
+pinned local vLLM launch profiles. Kubernetes baseline, batching, and AWQ profiles render locally;
 they have not been deployed to a cluster. No GPU performance results have been collected.
 
 ## Local setup
@@ -79,6 +79,19 @@ same explicit `comparison_group`; that setting records intent, not equivalent
 answer quality. Environment differences are flagged for inspection. Reports
 show missing measurements as `N/A`, with blank CSV cells.
 
+## Repeat concurrency measurements
+
+With `make mock` already running in another terminal:
+
+```bash
+make sweep
+```
+
+This runs concurrency 1, 4, and 8 three times and saves separate artifacts plus
+an index in `results/mock-sweep`. Existing directories are refused; use
+`SWEEP_DIR=results/mock-sweep-2` for another attempt. See
+[sweeps](docs/sweeps.md) for real-profile metadata, partial runs, and reporting.
+
 ## Serve a real model
 
 ```bash
@@ -128,7 +141,7 @@ are recorded as request failures.
 ## Validation and next experiments
 
 The offline tests cover metrics, stream parsing, benchmark orchestration, and
-report generation using simulated inputs, plus launcher checks with fake Docker
+report and sweep orchestration using simulated inputs, plus launcher checks with fake Docker
 and kubectl commands. `make unit` also checks Bash syntax. HTTP integration tests and live
 smoke/benchmark checks remain unverified in the restricted preparation
 environment. Run `make check`, `make smoke`, and the benchmark commands locally

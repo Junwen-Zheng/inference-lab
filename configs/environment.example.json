@@ -1,0 +1,8 @@
+{
+  "deployment_profile": null,
+  "model_id": null,
+  "model_revision": null,
+  "container_image_id": null,
+  "gpu_model": null,
+  "driver_version": null
+}
