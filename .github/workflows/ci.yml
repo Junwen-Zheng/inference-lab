@@ -1,0 +1,79 @@
+name: CI
+
+"on":
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run tests and mock smoke check
+        run: make ci PYTHON=python
+
+  manifests:
+    name: Kubernetes manifests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install kubectl 1.35.0
+        run: |
+          kubectl_dir="$RUNNER_TEMP/kubectl-1.35.0"
+          mkdir -p "$kubectl_dir"
+          curl -fsSL https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl -o "$kubectl_dir/kubectl"
+          curl -fsSL https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl.sha256 -o "$kubectl_dir/kubectl.sha256"
+          cd "$kubectl_dir"
+          printf '%s  kubectl\n' "$(cat kubectl.sha256)" | sha256sum --check -
+          chmod +x kubectl
+          printf '%s\n' "$kubectl_dir" >> "$GITHUB_PATH"
+      - name: Render serving and monitoring manifests
+        run: |
+          make k8s-render PROFILE=baseline > "$RUNNER_TEMP/baseline.yaml"
+          make k8s-render PROFILE=batched > "$RUNNER_TEMP/batched.yaml"
+          make k8s-render PROFILE=awq > "$RUNNER_TEMP/awq.yaml"
+          make monitoring-render > "$RUNNER_TEMP/monitoring.yaml"
+
+  prometheus:
+    name: Prometheus rules
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check configuration
+        run: |
+          docker run --rm --network none \
+            --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/workspace,readonly" \
+            --workdir /workspace --entrypoint /bin/promtool \
+            prom/prometheus:v3.15.1 check config deploy/observability/prometheus.yml
+      - name: Test recording and alert rules
+        run: |
+          docker run --rm --network none \
+            --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/workspace,readonly" \
+            --workdir /workspace --entrypoint /bin/promtool \
+            prom/prometheus:v3.15.1 test rules tests/test_prometheus_rules.yml
