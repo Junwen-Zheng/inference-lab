@@ -24,6 +24,14 @@ make check
 integration tests, which need permission to open a loopback port. Set
 `PYTHON=python3.12` on any Make command if needed.
 
+## Continuous checks
+
+The [CI workflow](.github/workflows/ci.yml) runs on pushes to `main`, pull
+requests and manual dispatch. It checks Python 3.10 and 3.12, including loopback
+HTTP integration and smoke tests, renders serving and monitoring manifests, and
+checks Prometheus rules. See [CI checks](docs/ci.md) for local commands and what
+the jobs cover. The first hosted run is pending upload.
+
 ## Run a benchmark
 
 First check the local HTTP path:
@@ -166,8 +174,9 @@ and kubectl commands.
 `make unit` also checks Bash syntax. The monitoring manifests render locally;
 Promtool rule tests and live metric scraping remain unverified in the preparation
 environment. HTTP integration tests and live smoke/benchmark checks also remain
-unverified there. Run `make check`, `make smoke`, and the benchmark commands locally
-to verify that path.
+unverified there. The new CI workflow schedules HTTP and Promtool checks on
+GitHub; adding the workflow does not establish that they pass. Run `make ci` and
+inspect the hosted job logs to verify those paths.
 
 Real experiments will record GPU hardware, runtime and model revisions, then
 compare a baseline, larger batching budgets, and quantised weights on a fixed

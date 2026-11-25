@@ -6,7 +6,7 @@ QUALITY_DIR ?= results/quality-$(PROFILE)
 QUALITY_ENVIRONMENT ?= results/environment.json
 export PYTHONPATH := $(CURDIR)/src:$(PYTHONPATH)
 
-.PHONY: check test smoke mock benchmark sweep report gpu-plan k8s-render monitoring-render monitoring-check quality unit
+.PHONY: ci check test smoke mock benchmark sweep report gpu-plan k8s-render monitoring-render monitoring-check quality unit
 check:
 	$(PYTHON) -m compileall -q src tests scripts
 	$(PYTHON) -c "import inference_lab; print('Package import passed')"
@@ -14,6 +14,12 @@ check:
 
 test:
 	$(PYTHON) -m unittest discover -s tests -v
+
+ci:
+	bash -n deploy/docker/run.sh
+	bash -n scripts/deploy.sh
+	$(MAKE) check PYTHON="$(PYTHON)"
+	$(MAKE) smoke PYTHON="$(PYTHON)"
 
 smoke:
 	$(PYTHON) scripts/smoke.py
