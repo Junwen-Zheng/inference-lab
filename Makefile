@@ -2,9 +2,11 @@ PYTHON ?= python3
 PROMTOOL ?= promtool
 PROFILE ?= baseline
 SWEEP_DIR ?= results/mock-sweep
+QUALITY_DIR ?= results/quality-$(PROFILE)
+QUALITY_ENVIRONMENT ?= results/environment.json
 export PYTHONPATH := $(CURDIR)/src:$(PYTHONPATH)
 
-.PHONY: check test smoke mock benchmark sweep report gpu-plan k8s-render monitoring-render monitoring-check unit
+.PHONY: check test smoke mock benchmark sweep report gpu-plan k8s-render monitoring-render monitoring-check quality unit
 check:
 	$(PYTHON) -m compileall -q src tests scripts
 	$(PYTHON) -c "import inference_lab; print('Package import passed')"
@@ -41,6 +43,9 @@ monitoring-check:
 	"$(PROMTOOL)" check config deploy/observability/prometheus.yml
 	"$(PROMTOOL)" test rules tests/test_prometheus_rules.yml
 
+quality:
+	$(PYTHON) -m inference_lab.quality --config configs/quality.json --profile "$(PROFILE)" --environment "$(QUALITY_ENVIRONMENT)" --output-dir "$(QUALITY_DIR)"
+
 unit:
 	bash -n deploy/docker/run.sh
 	bash -n scripts/deploy.sh
@@ -51,3 +56,4 @@ unit:
 	$(PYTHON) -m unittest discover -s tests -p 'test_launch.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_deploy.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_sweep.py' -v
+	$(PYTHON) -m unittest discover -s tests -p 'test_quality.py' -v

@@ -1,0 +1,8 @@
+{"id": "addition", "prompt": "What is 17 + 25? Reply with only the number.\nAnswer:", "answers": ["42"]}
+{"id": "subtraction", "prompt": "What is 91 - 37? Reply with only the number.\nAnswer:", "answers": ["54"]}
+{"id": "multiplication", "prompt": "What is 8 multiplied by 7? Reply with only the number.\nAnswer:", "answers": ["56"]}
+{"id": "time-conversion", "prompt": "How many minutes are in 3 hours? Reply with only the number.\nAnswer:", "answers": ["180"]}
+{"id": "extract-code", "prompt": "The parcel note reads: \"Delivery code: ZX-2049. Leave at reception.\" Extract the delivery code. Reply with only that code.\nAnswer:", "answers": ["ZX-2049"]}
+{"id": "sort-numbers", "prompt": "Sort 12, 3, 9 in ascending numerical order. Reply with the numbers separated by commas, with no spaces or other text.\nAnswer:", "answers": ["3,9,12"]}
+{"id": "context-lookup", "prompt": "North warehouse holds 12 boxes. South warehouse holds 7 boxes. Which warehouse holds more boxes? Reply with only North or South.\nAnswer:", "answers": ["North"]}
+{"id": "context-count", "prompt": "The list is: apple, pear, apple, plum, apple. How many times does apple appear? Reply with only the number.\nAnswer:", "answers": ["3"]}

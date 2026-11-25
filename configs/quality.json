@@ -1,0 +1,9 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "model": "inference-model",
+  "backend": "vllm",
+  "max_tokens": 64,
+  "timeout_s": 120.0,
+  "comparison_group": "qwen2.5-1.5b",
+  "dataset": "data/quality.jsonl"
+}

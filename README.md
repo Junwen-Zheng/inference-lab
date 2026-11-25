@@ -127,6 +127,14 @@ Rendering needs `kubectl`; config and rule tests need `promtool` 3.15.1. Neither
 command connects to a cluster. See [monitoring](docs/monitoring.md) for deployment,
 queries, alert thresholds, and the differences from client benchmark metrics.
 
+## Check answers before comparing speed
+
+A separate quality runner sends eight fixed prompts once each and saves answers,
+exact-match outcomes, request errors and runtime metadata. With a real serving
+profile running, use [quality checks](docs/quality.md) to collect separate FP16
+and AWQ artifacts. This small smoke suite does not establish general model
+quality or quantisation equivalence.
+
 ## Measurement definitions
 
 | Metric | Definition |
@@ -153,7 +161,8 @@ are recorded as request failures.
 ## Validation and next experiments
 
 Offline tests cover metrics, stream parsing, benchmark and sweep orchestration,
-and report generation. Launcher tests use fake Docker and kubectl commands.
+report generation and quality-check orchestration. Launcher tests use fake Docker
+and kubectl commands.
 `make unit` also checks Bash syntax. The monitoring manifests render locally;
 Promtool rule tests and live metric scraping remain unverified in the preparation
 environment. HTTP integration tests and live smoke/benchmark checks also remain
@@ -162,8 +171,8 @@ to verify that path.
 
 Real experiments will record GPU hardware, runtime and model revisions, then
 compare a baseline, larger batching budgets, and quantised weights on a fixed
-workload. Repeated runs and a separate answer-quality check are needed before
-drawing performance or quality conclusions.
+workload. Repeated measurements and broader task-specific quality evaluation
+are needed before drawing performance or quality conclusions.
 
 Code is MIT licensed. Model weights and runtime components retain their own
 licenses.
