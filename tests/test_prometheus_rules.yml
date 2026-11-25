@@ -70,12 +70,13 @@ tests:
       - series: 'vllm:e2e_request_latency_seconds_bucket{job="other",model_name="inference-model",le="+Inf"}'
         values: '0+10000x8'
     promql_expr_test:
-      - expr: inference_lab:output_tokens_per_second:rate1m
+      # Compare rates to six decimal places; accumulated rate arithmetic can exceed one ULP.
+      - expr: round(inference_lab:output_tokens_per_second:rate1m, 0.000001)
         eval_time: 1m
         exp_samples:
-          - labels: 'inference_lab:output_tokens_per_second:rate1m{model_name="inference-model"}'
+          - labels: '{model_name="inference-model"}'
             value: 30
-          - labels: 'inference_lab:output_tokens_per_second:rate1m{model_name="other-model"}'
+          - labels: '{model_name="other-model"}'
             value: 5
       - expr: inference_lab:requests_per_second:rate1m
         eval_time: 1m
