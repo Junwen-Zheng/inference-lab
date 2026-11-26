@@ -5,9 +5,12 @@ SWEEP_DIR ?= results/mock-sweep
 SUMMARY_DIR ?= $(SWEEP_DIR)-summary
 QUALITY_DIR ?= results/quality-$(PROFILE)
 QUALITY_ENVIRONMENT ?= results/environment.json
+QUALITY_REFERENCE ?= results/quality-batched/quality.json
+QUALITY_CANDIDATE ?= results/quality-awq/quality.json
+QUALITY_REPORT_DIR ?= results/quality-comparison
 export PYTHONPATH := $(CURDIR)/src:$(PYTHONPATH)
 
-.PHONY: ci check test smoke mock benchmark sweep sweep-summary report gpu-plan k8s-render monitoring-render monitoring-check quality unit
+.PHONY: ci check test smoke mock benchmark sweep sweep-summary report gpu-plan k8s-render monitoring-render monitoring-check quality quality-report unit
 check:
 	$(PYTHON) -m compileall -q src tests scripts
 	$(PYTHON) -c "import inference_lab; print('Package import passed')"
@@ -56,6 +59,9 @@ monitoring-check:
 quality:
 	$(PYTHON) -m inference_lab.quality --config configs/quality.json --profile "$(PROFILE)" --environment "$(QUALITY_ENVIRONMENT)" --output-dir "$(QUALITY_DIR)"
 
+quality-report:
+	$(PYTHON) -m inference_lab.quality_report "$(QUALITY_REFERENCE)" "$(QUALITY_CANDIDATE)" --output-dir "$(QUALITY_REPORT_DIR)"
+
 unit:
 	bash -n deploy/docker/run.sh
 	bash -n scripts/deploy.sh
@@ -68,3 +74,4 @@ unit:
 	$(PYTHON) -m unittest discover -s tests -p 'test_sweep.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_aggregate.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_quality.py' -v
+	$(PYTHON) -m unittest discover -s tests -p 'test_quality_report.py' -v

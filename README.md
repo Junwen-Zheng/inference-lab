@@ -158,6 +158,18 @@ profile running, use [quality checks](docs/quality.md) to collect separate FP16
 and AWQ artifacts. This small smoke suite does not establish general model
 quality or quantisation equivalence.
 
+After collecting batched FP16 and AWQ quality runs, compare their saved answers:
+
+```bash
+make quality-report
+```
+
+This writes `comparison.json` and `comparison.csv` to `results/quality-comparison`
+without contacting a server. It pairs cases by ID, retains both answers and
+request errors, and counts new and resolved exact-match mismatches. Incompatible
+datasets or decoding settings are refused. See
+[answer comparisons](docs/quality.md#compare-saved-answers) for input paths and limits.
+
 ## Measurement definitions
 
 | Metric | Definition |
