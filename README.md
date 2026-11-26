@@ -104,6 +104,18 @@ an index in `results/mock-sweep`. Existing directories are refused; use
 `SWEEP_DIR=results/mock-sweep-2` for another attempt. See
 [sweeps](docs/sweeps.md) for real-profile metadata, partial runs, and reporting.
 
+After a sweep completes, summarise its repetitions without contacting a server:
+
+```bash
+make sweep-summary
+```
+
+This writes `summary.json` and `summary.csv` under `results/mock-sweep-summary`,
+with per-concurrency median, minimum and maximum for the six report metrics. Raw values,
+failed request totals and synthetic labels are retained. Incomplete sweeps are
+refused; missing metrics remain unavailable. See
+[sweep summaries](docs/sweeps.md#summarise-repetitions) for real runs and limits.
+
 ## Serve a real model
 
 ```bash
@@ -172,9 +184,9 @@ are recorded as request failures.
 ## Validation and next experiments
 
 Offline tests cover metrics, stream parsing, benchmark and sweep orchestration,
-report generation and quality-check orchestration. Launcher tests use fake Docker
+report generation, sweep summaries and quality-check orchestration. Launcher tests use fake Docker
 and kubectl commands.
-`make unit` also checks Bash syntax. Hosted CI passed all 99 tests and the
+`make unit` also checks Bash syntax. The recorded hosted CI run passed 99 tests and the
 synthetic HTTP smoke check on Python 3.10 and 3.12, all four manifest renders,
 Prometheus configuration validation and seven rule scenarios. Real GPU serving,
 cluster deployment, live metric scraping and model-quality measurements remain

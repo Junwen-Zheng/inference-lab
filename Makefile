@@ -2,11 +2,12 @@ PYTHON ?= python3
 PROMTOOL ?= promtool
 PROFILE ?= baseline
 SWEEP_DIR ?= results/mock-sweep
+SUMMARY_DIR ?= $(SWEEP_DIR)-summary
 QUALITY_DIR ?= results/quality-$(PROFILE)
 QUALITY_ENVIRONMENT ?= results/environment.json
 export PYTHONPATH := $(CURDIR)/src:$(PYTHONPATH)
 
-.PHONY: ci check test smoke mock benchmark sweep report gpu-plan k8s-render monitoring-render monitoring-check quality unit
+.PHONY: ci check test smoke mock benchmark sweep sweep-summary report gpu-plan k8s-render monitoring-render monitoring-check quality unit
 check:
 	$(PYTHON) -m compileall -q src tests scripts
 	$(PYTHON) -c "import inference_lab; print('Package import passed')"
@@ -32,6 +33,9 @@ benchmark:
 
 sweep:
 	$(PYTHON) -m inference_lab.sweep --config configs/mock.json --profile mock --concurrency 1 4 8 --repetitions 3 --cooldown-s 0 --output-dir "$(SWEEP_DIR)"
+
+sweep-summary:
+	$(PYTHON) -m inference_lab.aggregate "$(SWEEP_DIR)/sweep.json" --output-dir "$(SUMMARY_DIR)"
 
 report:
 	$(PYTHON) -m inference_lab.report results/mock-benchmark.json --output results/report.html --csv results/summary.csv
@@ -62,4 +66,5 @@ unit:
 	$(PYTHON) -m unittest discover -s tests -p 'test_launch.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_deploy.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_sweep.py' -v
+	$(PYTHON) -m unittest discover -s tests -p 'test_aggregate.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_quality.py' -v

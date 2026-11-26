@@ -111,3 +111,43 @@ fresh metadata, and use a new output directory with the matching `--profile`.
 Keep workload, seed, request count, output budget, latency targets, and hardware
 fixed across profiles. Quantisation quality still needs a separate check; no
 real GPU results have been collected by this project.
+
+## Summarise repetitions
+
+Use a completed sweep's index to calculate statistics across repetitions:
+
+```bash
+make sweep-summary
+PYTHONPATH=src python3 -m inference_lab.aggregate \
+  results/baseline-sweep/sweep.json --output-dir results/baseline-summary
+```
+
+The first command reads `results/mock-sweep/sweep.json` and writes to
+`results/mock-sweep-summary`. Override `SWEEP_DIR` and `SUMMARY_DIR` for another
+location. The second command is for a previously collected baseline sweep;
+neither command starts a server or sends requests. Each output directory must
+be new, including for a repeat of the same input.
+
+`summary.json` groups runs by concurrency, with raw metric values ordered by
+repetition and their median, minimum and maximum for the six HTML report
+metrics. It retains profile, workload
+hash, configuration, runtime metadata and source filenames. `summary.csv` has
+one row per concurrency and metric. Failed requests stay in the totals; runs
+with measured failures are included. Mock summaries remain explicitly synthetic.
+
+The tool requires a complete plan and every run file. It rejects incomplete
+sweeps, duplicate cases, mismatched settings or runtime metadata, and counts
+that disagree with request records. Copy the index and all its run files
+together when moving a sweep; the original workload path need not exist.
+
+If any repetition lacks a metric, its raw value is `null` and that metric's
+median/minimum/maximum all remain `null` (blank in CSV). `observed_runs` shows
+how many values are available; it does not permit silently excluding a run.
+These are statistics across run summaries: a median of per-run p95 values is
+not the p95 of pooled requests. There are no confidence intervals or automatic
+speedup claims. Review each run, error counts and SLO goodput alongside the spread.
+
+Exit codes are 0 for a valid summary without request failures, 1 when the saved
+summary includes failed requests, and 2 for invalid input or a file error.
+A zero exit code does not mean latency targets were met. Quality artifacts are
+separate; summarise each serving profile separately before comparing results.

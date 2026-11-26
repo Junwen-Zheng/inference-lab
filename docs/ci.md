@@ -7,7 +7,7 @@ passed all jobs on 25 November 2026 at commit
 
 | Job | Checks |
 | --- | --- |
-| Python | Bash syntax, Python compilation/import, all 99 tests and the synthetic HTTP smoke check on Python 3.10 and 3.12. |
+| Python | Bash syntax, Python compilation/import, the full test suite and synthetic HTTP smoke check on Python 3.10 and 3.12. |
 | Manifests | Kustomize renders for baseline, batched, AWQ and Prometheus using kubectl 1.35.0. |
 | Prometheus | Config validation and seven rule-test scenarios with Promtool from Prometheus 3.15.1. |
 
@@ -31,7 +31,7 @@ make ci
 
 This checks Bash syntax, runs `make check`, then `make smoke`. It opens temporary
 loopback HTTP ports and saves `results/smoke.json`. Use `make unit` where socket
-binding is restricted; that runs 91 offline tests and does not cover the eight
+binding is restricted; that runs the offline tests and does not cover the eight
 HTTP integration tests or the smoke check.
 
 With kubectl installed, render the manifests without contacting a cluster:
