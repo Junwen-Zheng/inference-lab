@@ -3,6 +3,7 @@
 The profiles from [local serving](local-serving.md) run as one GPU Pod behind a
 ClusterIP Service. All three manifests render locally; cluster admission,
 scheduling, model loading, and inference remain unverified.
+For the planned cloud execution, use the [rented GPU runbook](cloud-gpu.md).
 
 | Profile | Checkpoint | Maximum sequences | Batched tokens |
 | --- | --- | ---: | ---: |

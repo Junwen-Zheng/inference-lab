@@ -32,7 +32,8 @@ integration tests, which need permission to open a loopback port. Set
 The [CI workflow](.github/workflows/ci.yml) runs on pushes to `main`, pull
 requests and manual dispatch. It checks Python 3.10 and 3.12, including loopback
 HTTP integration and smoke tests, renders serving and monitoring manifests, and
-checks Prometheus rules. [Run #3 passed on 2026-11-25](https://github.com/Junwen-Zheng/inference-lab/actions/runs/45564811881).
+checks Prometheus rules. The [latest verified run passed on 2026-11-26](https://github.com/Junwen-Zheng/inference-lab/actions/runs/45742843361),
+before the cloud preparation increment.
 See [CI checks](docs/ci.md) for local commands and what the jobs cover.
 
 ## Run a benchmark
@@ -139,6 +140,12 @@ See [Kubernetes serving](docs/kubernetes.md) for the profile differences,
 switching deployments, and recording comparable runs. Rendering is offline;
 `PROFILE` also selects the Docker command shown by `make gpu-plan`.
 
+The [rented GPU runbook](docs/cloud-gpu.md) prepares a single-node K3s session
+on a cloud A10 VM, with a cost proposal, deadline guard, runtime evidence,
+larger fixed workload and export/termination steps. Nothing has been rented or
+measured yet. `configs/gpu-experiment.json` plans 120 requests per run with a
+192-token ceiling; the original `configs/gpu.json` remains a smoke configuration.
+
 ## Monitor serving
 
 ```bash
@@ -198,7 +205,7 @@ are recorded as request failures.
 Offline tests cover metrics, stream parsing, benchmark and sweep orchestration,
 report generation, sweep summaries and quality-check orchestration. Launcher tests use fake Docker
 and kubectl commands.
-`make unit` also checks Bash syntax. The recorded hosted CI run passed 99 tests and the
+`make unit` also checks Bash syntax. The recorded hosted CI run passed the Python tests and the
 synthetic HTTP smoke check on Python 3.10 and 3.12, all four manifest renders,
 Prometheus configuration validation and seven rule scenarios. Real GPU serving,
 cluster deployment, live metric scraping and model-quality measurements remain

@@ -75,3 +75,6 @@ unit:
 	$(PYTHON) -m unittest discover -s tests -p 'test_aggregate.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_quality.py' -v
 	$(PYTHON) -m unittest discover -s tests -p 'test_quality_report.py' -v
+	$(PYTHON) -m unittest discover -s tests -p 'test_gpu_workload.py' -v
+	$(PYTHON) -m unittest discover -s tests -p 'test_gpu_evidence.py' -v
+	$(PYTHON) -m unittest discover -s tests -p 'test_lambda_deadline.py' -v
