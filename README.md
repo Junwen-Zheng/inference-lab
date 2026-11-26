@@ -10,6 +10,9 @@ pinned local vLLM launch profiles. Kubernetes baseline, batching, and AWQ profil
 they have not been deployed to a cluster. Optional Prometheus monitoring includes
 serving metrics and alert rules. No GPU performance results have been collected.
 
+The [experiment writeup](docs/experiment.md) records the comparison design,
+collection commands, current evidence and pending results.
+
 ## Local setup
 
 Python 3.10+ and Make are required. The benchmark tooling uses the standard library.
@@ -29,8 +32,8 @@ integration tests, which need permission to open a loopback port. Set
 The [CI workflow](.github/workflows/ci.yml) runs on pushes to `main`, pull
 requests and manual dispatch. It checks Python 3.10 and 3.12, including loopback
 HTTP integration and smoke tests, renders serving and monitoring manifests, and
-checks Prometheus rules. See [CI checks](docs/ci.md) for local commands and what
-the jobs cover. The first hosted run is pending upload.
+checks Prometheus rules. [Run #3 passed on 2026-11-25](https://github.com/Junwen-Zheng/inference-lab/actions/runs/45564811881).
+See [CI checks](docs/ci.md) for local commands and what the jobs cover.
 
 ## Run a benchmark
 
@@ -171,17 +174,18 @@ are recorded as request failures.
 Offline tests cover metrics, stream parsing, benchmark and sweep orchestration,
 report generation and quality-check orchestration. Launcher tests use fake Docker
 and kubectl commands.
-`make unit` also checks Bash syntax. The monitoring manifests render locally;
-Promtool rule tests and live metric scraping remain unverified in the preparation
-environment. HTTP integration tests and live smoke/benchmark checks also remain
-unverified there. The new CI workflow schedules HTTP and Promtool checks on
-GitHub; adding the workflow does not establish that they pass. Run `make ci` and
-inspect the hosted job logs to verify those paths.
+`make unit` also checks Bash syntax. Hosted CI passed all 99 tests and the
+synthetic HTTP smoke check on Python 3.10 and 3.12, all four manifest renders,
+Prometheus configuration validation and seven rule scenarios. Real GPU serving,
+cluster deployment, live metric scraping and model-quality measurements remain
+pending. CI's synthetic checks cannot establish inference performance.
 
 Real experiments will record GPU hardware, runtime and model revisions, then
 compare a baseline, larger batching budgets, and quantised weights on a fixed
 workload. Repeated measurements and broader task-specific quality evaluation
-are needed before drawing performance or quality conclusions.
+are needed before drawing performance or quality conclusions. The
+[writeup](docs/experiment.md#recorded-results) separates observed validation from
+unmeasured hypotheses and explains which artifacts to publish with results.
 
 Code is MIT licensed. Model weights and runtime components retain their own
 licenses.

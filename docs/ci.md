@@ -1,8 +1,9 @@
 # CI checks
 
 `.github/workflows/ci.yml` runs on pushes to `main`, pull requests and manual
-dispatch. After uploading, open the repository's Actions tab and select `CI`.
-The first hosted run has not been observed during preparation.
+dispatch. [Run #3](https://github.com/Junwen-Zheng/inference-lab/actions/runs/45564811881)
+passed all jobs on 25 November 2026 at commit
+[`3327708`](https://github.com/Junwen-Zheng/inference-lab/commit/3327708b993bacd5496f71efd6561db6dabc2ed2).
 
 | Job | Checks |
 | --- | --- |
@@ -18,7 +19,7 @@ Python packages, model weights, GPU or cluster credentials.
 
 Jobs have ten-minute timeouts. A newer run cancels an older run for the same
 workflow and ref. The token has read access to repository contents, and checkout
-does not retain credentials. No deployment or external notification is performed.
+does not retain credentials. The workflow does not deploy resources.
 
 ## Run locally
 
@@ -51,17 +52,7 @@ make monitoring-check
 The same Promtool commands run in the workflow's Docker container. Logs show
 which assertion or validation failed; rerun the failing command after fixing it.
 HTTP checks and Promtool tests remain unrun in the restricted preparation
-environment. A green CI run checks protocol behaviour, rendering and rule
-fixtures; it does not establish GPU performance, model quality, live metrics or
-cluster readiness. Rendering does not validate Kubernetes API schemas.
-
-## Upload the workflow
-
-The ZIP contains a hidden `.github` folder. In Finder, press **Command+Shift+.**
-to show it, then upload that folder with the other changed files. Confirm GitHub
-lists `.github/workflows/ci.yml` before committing.
-
-If GitHub refuses the hidden folder, upload the other files first. Use **Add file
-→ Create new file**, name it `.github/workflows/ci.yml`, and paste the contents
-of the ZIP's `ci.yml` file into the editor. Commit with `ci: add automated
-project checks`. Keep the workflow at that exact path so GitHub can discover it.
+environment; they passed on GitHub's runners in the linked run. CI checks
+protocol behaviour, rendering and rule fixtures. GPU performance, model quality,
+live metrics and cluster readiness still need separate validation. Rendering
+does not validate Kubernetes API schemas.
